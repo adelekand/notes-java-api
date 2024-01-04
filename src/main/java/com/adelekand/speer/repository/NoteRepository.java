@@ -10,6 +10,4 @@ import java.util.Optional;
 
 public interface NoteRepository extends MongoRepository<Note, String>, CustomNoteRepository {
     List<Note> findByCreatorOrSharedWith(User creator, User sharedWith);
-
-    Optional<Note> findByIdAndCreatorOrSharedWith(String id, User creator, User sharedWith);
 }

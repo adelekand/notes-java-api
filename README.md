@@ -1,33 +1,152 @@
 # Java CRUD Rest API for Notes
+Simple CRUD operations using Java SpringBoot and MongoDB 
 
 ### Framework
 - Java SpringBoot
 
 ### Database
-- MongoDB deployed using docker. To run 
+- MongoDB deployed using docker
 
+### Dependencies and tools
+- Spring Web Security  (Jwt Authentication Filter for handling bearer token).
+- JUnit and TestContainers for Integration tests.
+- Bucket4j for rate limiting, set to 20 requests per minutes.
 
+### Run
+Create a .env file to pass the mongodb environment variables to the docker-compose.yml file
+```agsl
+MONGO_INITDB_DATABASE=admin
+MONGO_INITDB_ROOT_USERNAME=<root db username>
+MONGO_INITDB_ROOT_PASSWORD=<root db password>
+MONGODB_DB=<db name>
+MONGODB_USER=<db user>
+MONGODB_PASSWORD=<db password>
+```
+Then run
+```agsl
+docker-compose --env-file .env up -d
+```
+Once the mongodb container is up, change the `application.yml` file to reflect the mongodb database name and credentials. Then run
 
-    implementation 'org.springframework.boot:spring-boot-starter-actuator'
-    implementation 'org.springframework.boot:spring-boot-starter-data-mongodb'
-    implementation 'org.springframework.boot:spring-boot-starter-security'
-    implementation 'org.springframework.boot:spring-boot-starter-web'
-    implementation 'com.github.vladimir-bukhtoyarov:bucket4j-core:7.3.0'
-    compileOnly 'org.projectlombok:lombok'
-    annotationProcessor 'org.projectlombok:lombok'
-    implementation 'io.jsonwebtoken:jjwt-api:0.11.2'
-    runtimeOnly 'io.jsonwebtoken:jjwt-impl:0.11.2',
-    'io.jsonwebtoken:jjwt-jackson:0.11.2',
-    'org.apache.commons:commons-lang3:3.0'
-    implementation group: 'org.apache.commons', name: 'commons-lang3', version: '3.14.0'
+```agsl
+./gradlew bootRun 
+```
 
-	testImplementation 'org.springframework.boot:spring-boot-starter-test'
-	testImplementation 'org.springframework.security:spring-security-test'
-	testImplementation "org.junit.jupiter:junit-jupiter:5.8.1"
-	testImplementation 'org.testcontainers:junit-jupiter'
-	testImplementation "org.testcontainers:mongodb:1.19.3"
+### Requests
 
+#### Signup
+```agsl
+curl --location 'http://localhost:8080/api/auth/signup' \
+--header 'Content-Type: application/json' \
+--data '{
+    "firstName": "<insert firstName>",
+    "lastName": "<insert lastName>",
+    "username": "<insert username>",
+    "password": "<insert password>"
+}'
+```
+```agsl
+// Response
+{
+    "token": "<generated token>"
+}
+```
+#
+#### Login
+```agsl
+curl --location 'http://localhost:8080/api/auth/login' \
+--header 'Content-Type: application/json' \
+--data '{
+    "username": "<insert username>",
+    "password": "<insert password>"
+}'
+```
+```agsl
+// Response
+{
+    "token": "<generated token>"
+}
+```
+#
+#### Fetch Notes
+```agsl
+curl --location 'http://localhost:8080/api/notes' \
+--header 'Authorization: Bearer <generated token>' \
+```
+```agsl
+// Response
+[
+    { "id": "sample-id", "title": "sample-title", "content": "sample-content" }
+]
+```
 
-Details explaining the choice of framework/db/ any 3rd party tools.
-instructions on how to run your code and run the tests.
-Any necessary setup files or scripts to run your code locally or in a test environment.
+#
+#### Fetch Note by id
+```agsl
+curl --location 'http://localhost:8080/api/notes/sample-id' \
+--header 'Authorization: Bearer <generated token>'
+```
+```agsl
+// Response
+{ "id": "sample-id", "title": "sample-title", "content": "sample-content" }
+```
+
+#
+#### Create Note
+```agsl
+curl --location 'http://localhost:8080/api/notes' \
+--header 'Content-Type: application/json' \
+--header 'Authorization: Bearer <generated token>' \
+--data '{
+    "title": "<insert title>",
+    "content": "<insert content>"
+}'
+```
+```agsl
+// Response
+{ "id": "sample-id", "title": "sample-title", "content": "sample-content" }
+```
+
+#
+#### Edit Note
+```agsl
+curl --location --request PUT 'http://localhost:8080/api/notes/sample-id' \
+--header 'Content-Type: application/json' \
+--header 'Authorization: Bearer <generated token>' \
+--data '{
+    "title": "<insert title>",
+    "content": "<insert content>"
+}'
+```
+```agsl
+// Response
+{ "id": "sample-id", "title": "sample-title", "content": "sample-content" }
+```
+
+#
+#### Share Note
+```agsl
+curl --location 'http://localhost:8080/api/notes/6594e47236da1f23cee34d3d/share' \
+--header 'Content-Type: application/json' \
+--header 'Authorization: Bearer <generated token>' \
+--data '{
+    "username": "<username to share note to>"
+}'
+```
+```agsl
+// Response
+Note has been shared
+```
+
+#
+#### Search Note
+```agsl
+curl --location 'http://localhost:8080/api/search?query=<note title regex>' \
+--header 'Authorization: Bearer <generated token>'
+```
+```agsl
+// Response
+[
+    { "id": "sample-id", "title": "sample-title", "content": "sample-content" }
+]
+```

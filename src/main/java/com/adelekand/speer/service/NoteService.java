@@ -5,7 +5,6 @@ import com.adelekand.speer.dto.request.ShareNoteRequest;
 import com.adelekand.speer.dto.response.NoteResponse;
 import com.adelekand.speer.exception.NoteNotFoundException;
 import com.adelekand.speer.model.Note;
-import com.adelekand.speer.repository.CustomNoteRepository;
 import com.adelekand.speer.repository.NoteRepository;
 import com.adelekand.speer.repository.UserRepository;
 import com.adelekand.speer.utils.SecurityUtils;
@@ -32,8 +31,7 @@ public class NoteService {
     public NoteResponse getUserNoteById(String id) throws NoteNotFoundException {
         var user = utils.getUser();
 
-        return noteRepository.findByIdAndCreatorOrSharedWith(id, user, user)
-                .orElseThrow(() -> new NoteNotFoundException(id)).toResponse();
+        return noteRepository.findByIdAndCreatorOrSharedWith(id, user).toResponse();
     }
 
     public NoteResponse createNote(NoteRequest request) {
@@ -49,8 +47,7 @@ public class NoteService {
 
     public NoteResponse editNote(String id, NoteRequest request) throws NoteNotFoundException {
         var user = utils.getUser();
-        var noteToUpdated = noteRepository.findByIdAndCreatorOrSharedWith(id, user, user)
-                .orElseThrow(() -> new NoteNotFoundException(id));
+        var noteToUpdated = noteRepository.findByIdAndCreatorOrSharedWith(id, user);
 
         noteToUpdated.setTitle(request.getTitle());
         noteToUpdated.setContent(request.getContent());
@@ -60,8 +57,7 @@ public class NoteService {
 
     public Boolean deleteUserNoteById(String id) throws NoteNotFoundException {
         var user = utils.getUser();
-        var noteToDelete = noteRepository.findByIdAndCreatorOrSharedWith(id, user, user)
-                .orElseThrow(() -> new NoteNotFoundException(id));
+        var noteToDelete = noteRepository.findByIdAndCreatorOrSharedWith(id, user);
 
         noteRepository.deleteById(noteToDelete.getId());
         return true;
@@ -78,8 +74,7 @@ public class NoteService {
         var user = utils.getUser();
         var userToShareTo = userRepository.findByUsername(request.getUsername()).orElseThrow();
 
-        var noteToShare = noteRepository.findByIdAndCreatorOrSharedWith(id, user, user)
-                .orElseThrow(() -> new NoteNotFoundException(id));
+        var noteToShare = noteRepository.findByIdAndCreatorOrSharedWith(id, user);
         noteToShare.setSharedWith(userToShareTo);
         noteRepository.save(noteToShare);
     }

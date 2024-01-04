@@ -27,7 +27,7 @@ class MongoRepositoryTests extends TestInitializer {
 		var savedUser = buildUser();
 		var savedNote = buildNote(savedUser);
 
-		var queriedNote = noteRepository.findByIdAndCreatorOrSharedWith(savedNote.getId(), savedUser, savedUser).get();
+		var queriedNote = noteRepository.findByIdAndCreatorOrSharedWith(savedNote.getId(), savedUser);
 		assertEquals(savedNote.getId(), queriedNote.getId());
 		assertEquals(savedNote.getTitle(), queriedNote.getTitle());
 		assertEquals(savedNote.getContent(), queriedNote.getContent());

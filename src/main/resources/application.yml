@@ -1,0 +1,20 @@
+spring:
+  data:
+    mongodb:
+      uri: ${MONGODB_URI:mongodb://user:password@localhost:27017/speer_db?authSource=admin}
+      auto-index-creation: true
+  main:
+    allow-bean-definition-overriding: true
+
+token:
+  signing:
+    key: 5d434de8cb384232b1a58dc62786f65386ab0006f7aa4ada84d3836b372b6d45
+
+#  Bucket4j to allow 20 requests per minute
+bucket4j:
+  limits:
+    capacity: 20
+    tokens: 20
+    duration: 1
+
+

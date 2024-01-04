@@ -1,5 +1,6 @@
 package com.adelekand.speer;
 
+import com.adelekand.speer.exception.NoteNotFoundException;
 import com.adelekand.speer.model.Note;
 import com.adelekand.speer.model.User;
 import org.junit.jupiter.api.Test;
@@ -23,7 +24,7 @@ class MongoRepositoryTests extends TestInitializer {
 	}
 
 	@Test
-	public void testSaveAndFindNote() {
+	public void testSaveAndFindNote() throws NoteNotFoundException {
 		var savedUser = buildUser();
 		var savedNote = buildNote(savedUser);
 

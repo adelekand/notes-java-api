@@ -47,9 +47,7 @@ curl --location 'http://localhost:8080/api/auth/signup' \
 ```
 ```agsl
 // Response
-{
-    "token": "<generated token>"
-}
+{ "token": "<generated token>" }
 ```
 #
 #### Login
@@ -63,9 +61,7 @@ curl --location 'http://localhost:8080/api/auth/login' \
 ```
 ```agsl
 // Response
-{
-    "token": "<generated token>"
-}
+{ token": "<generated token>" }
 ```
 #
 #### Fetch Notes

@@ -1,9 +1,11 @@
 package com.adelekand.speer;
 
-import com.adelekand.speer.enums.ERole;
+import com.adelekand.speer.dto.response.NoteResponse;
+import com.adelekand.speer.model.Note;
 import com.adelekand.speer.model.User;
 import com.adelekand.speer.service.JwtService;
-import org.junit.jupiter.api.BeforeAll;
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -12,12 +14,17 @@ import org.springframework.http.MediaType;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
 import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.test.web.servlet.MvcResult;
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
 
 
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
-import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.print;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 
@@ -34,37 +41,84 @@ class ControllerTests extends TestInitializer {
 	@Autowired
 	private MockMvc mockMvc;
 
-	@BeforeAll
-	void init() {
-		var password = passwordEncoder.encode("password");
-		List<String[]> usersToBuild = List.of(
-				new String[] {"johndoe", "john", "doe", password},
-				new String[] {"janecrow", "jane", "crow", password},
-				new String[] {"maryjane", "mary", "jane", password}
-		);
-		List<User> users = mongoTemplate.insertAll(dataBuilder.buildUsers(usersToBuild)).stream().toList();
-
-		List<Object[]> notesToBuild = List.of(
-				new Object[] {"Note  title 1", "Note content 1", users.get(0)},
-				new Object[] {"Note  title 2", "Note content 2", users.get(0)},
-				new Object[] {"Note  title 3", "Note content 3", users.get(0)},
-				new Object[] {"Note  title 4", "Note content 4", users.get(0)},
-				new Object[] {"Note  title 5", "Note content 5", users.get(1)},
-				new Object[] {"Note  title 6", "Note content 6", users.get(1)}
-		);
-		mongoTemplate.insertAll(dataBuilder.buildNotes(notesToBuild));
-	}
+	@Autowired
+	ObjectMapper objectMapper;
 
 	@Test
 	public void getAllNotes() throws Exception {
-		var user = userRepository.findByUsername("johndoe").get();
+		var initValue = initDB(2, 4);
+
+		var savedUser = ((List<User>)initValue.get("users")).get(0);
+		var savedNotes = (List<Note>)initValue.get("notes");
+
+		var user = userRepository.findByUsername(savedUser.getUsername()).get();
 		var token = jwtService.generateToken(user);
 
-		mockMvc.perform(MockMvcRequestBuilders
+		MvcResult result = mockMvc.perform(MockMvcRequestBuilders
 						.get("/api/notes").accept(MediaType.APPLICATION_JSON)
 						.header("Authorization", "Bearer " + token)
 				)
-				.andDo(print())
-				.andExpect(status().isOk());
+				.andExpect(status().isOk())
+				.andExpect(content().contentType("application/json"))
+				.andReturn();
+
+		String responseBody  = result.getResponse().getContentAsString();
+
+		List<NoteResponse> returnedNotes = objectMapper.readValue(responseBody, new TypeReference<>() {});
+		assertEquals(returnedNotes.size(), 4);
+		assertEquals(returnedNotes.get(0).getId(), savedNotes.get(0).getId());
+		assertEquals(returnedNotes.get(1).getId(), savedNotes.get(1).getId());
+		assertEquals(returnedNotes.get(2).getId(), savedNotes.get(2).getId());
+		assertEquals(returnedNotes.get(3).getId(), savedNotes.get(3).getId());
+	}
+
+	@Test
+	public void getNoteById() throws Exception {
+		var initValue = initDB(1, 1);
+
+		var savedUser = ((List<User>)initValue.get("users")).get(0);
+		var savedNote = ((List<Note>)initValue.get("notes")).get(0);
+
+		var user = userRepository.findByUsername(savedUser.getUsername()).get();
+		var token = jwtService.generateToken(user);
+
+		MvcResult result = mockMvc.perform(MockMvcRequestBuilders
+						.get("/api/notes/" + savedNote.getId()).accept(MediaType.APPLICATION_JSON)
+						.header("Authorization", "Bearer " + token)
+				)
+				.andExpect(status().isOk())
+				.andExpect(content().contentType("application/json"))
+				.andReturn();
+
+		String responseBody  = result.getResponse().getContentAsString();
+
+		NoteResponse returnedNote = objectMapper.readValue(responseBody, new TypeReference<>() {});
+		assertEquals(returnedNote.getId(), savedNote.getId());
+		assertEquals(returnedNote.getTitle(), savedNote.getTitle());
+		assertEquals(returnedNote.getContent(), savedNote.getContent());
+	}
+
+	Map<String, Object> initDB(int numOfUsers, int numOfNotes) {
+		Map<String, Object> returnValue = new HashMap<>();
+
+		var password = passwordEncoder.encode("password");
+		List<String[]> usersToBuild = new ArrayList<>();
+		for (int i = 0; i < numOfUsers; i++) {
+			usersToBuild.add(new String[] {"username"+i, "firstname"+i, "lastname"+i, password});
+		}
+
+		List<User> users = mongoTemplate.insertAll(dataBuilder.buildUsers(usersToBuild)).stream().toList();
+		returnValue.put("users", users);
+
+		List<Object[]> notesToBuild = new ArrayList<>();
+
+		for (int i = 0; i < numOfNotes; i++) {
+			notesToBuild.add(new Object[] {"Note  title " + i, "Note content " + i, users.get(0)});
+		}
+
+		List<Note> notes = mongoTemplate.insertAll(dataBuilder.buildNotes(notesToBuild)).stream().toList();
+		returnValue.put("notes", notes);
+
+		return returnValue;
 	}
 }
